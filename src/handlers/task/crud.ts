@@ -8,6 +8,7 @@ import {
 import { CacheManager } from "../../cache/index.js";
 import { ValidationError } from "../../errors.js";
 import { extractTaskIdentifiers } from "../../utils/parameter-transformer.js";
+import { getAllTasks } from "./bulk.js";
 import {
   validateTaskContent,
   validateDescription,
@@ -320,21 +321,22 @@ export async function handleGetTasks(
     if (args.label_id) {
       apiParams.label = args.label_id;
     }
-    if (args.limit && args.limit > 0) {
-      apiParams.limit = args.limit;
-    }
+    // NOTE: limit is intentionally NOT sent to the API here. It caps the page
+    // size and would truncate cursor pagination, causing client-side filters
+    // (task_name, priority, due) to silently miss tasks beyond the first page.
+    // The requested limit is applied via slice() after filtering, below.
 
     const cacheKey = createCacheKey("tasks", apiParams);
     tasks = taskCache.get(cacheKey);
 
     if (!tasks) {
-      const result = await todoistClient.getTasks(
-        Object.keys(apiParams).length > 0
-          ? (apiParams as Parameters<typeof todoistClient.getTasks>[0])
-          : undefined
+      // Paginate through ALL pages (the Todoist v1 API is cursor-paginated; a
+      // single getTasks() returns only the first page). Reuse the shared
+      // paginator so client-side filters see the complete task set.
+      tasks = await getAllTasks(
+        todoistClient,
+        Object.keys(apiParams).length > 0 ? apiParams : undefined
       );
-      // Handle both array response and object response formats
-      tasks = extractArrayFromResponse<TodoistTask>(result);
       taskCache.set(cacheKey, tasks);
     }
   }
