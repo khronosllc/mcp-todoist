@@ -41,15 +41,22 @@ const taskCache = cacheManager.getOrCreateCache<TodoistTask[]>("tasks", 30000, {
  * only returns the first page. This function follows nextCursor until all
  * tasks have been retrieved.
  */
-async function getAllTasks(todoistClient: TodoistApi): Promise<TodoistTask[]> {
+export async function getAllTasks(
+  todoistClient: TodoistApi,
+  params?: Record<string, string | number | undefined>
+): Promise<TodoistTask[]> {
   const allTasks: TodoistTask[] = [];
   let cursor: string | null | undefined;
   do {
-    const args: { cursor?: string } = {};
+    const args: Record<string, string | number | undefined> = {
+      ...(params ?? {}),
+    };
     if (cursor) {
       args.cursor = cursor;
     }
-    const response = await todoistClient.getTasks(args);
+    const response = await todoistClient.getTasks(
+      args as Parameters<typeof todoistClient.getTasks>[0]
+    );
     const page = extractArrayFromResponse<TodoistTask>(response);
     allTasks.push(...page);
     cursor = response?.nextCursor;

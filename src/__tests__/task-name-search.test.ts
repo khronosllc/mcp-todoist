@@ -72,7 +72,9 @@ describe("Task Name Search Functionality", () => {
 
       const result = await handleGetTasks(mockTodoistClient, args);
 
-      expect(mockTodoistClient.getTasks).toHaveBeenCalledWith(undefined);
+      // Routes through the shared cursor paginator (getAllTasks), which calls
+      // getTasks({}) for the first page when no scope params are supplied.
+      expect(mockTodoistClient.getTasks).toHaveBeenCalledWith({});
       expect(result).toContain("Bobo McJiggles Task");
       expect(result).toContain("Another Bobo McJiggles Task");
       expect(result).not.toContain("Regular Task");
