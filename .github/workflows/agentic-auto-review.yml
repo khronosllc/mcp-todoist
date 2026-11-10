@@ -1,0 +1,21 @@
+name: Agentic Auto Review
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+  actions: read
+
+jobs:
+  review:
+    if: github.repository_owner == 'khronosllc'
+    uses: khronosllc/.github/.github/workflows/pi-auto-review.yml@main
+    with:
+      model: modal-kimi/moonshotai/Kimi-K3
+      allowed_bots: 'khr-ghostwheel,khr-trinity,khr-benedict,khr-dworkin,khr-ghost,khr-tank,khr-morpheus'
+    secrets:
+      REVIEW_DOPPLER_TOKEN: ${{ secrets.REVIEW_DOPPLER_TOKEN }}
